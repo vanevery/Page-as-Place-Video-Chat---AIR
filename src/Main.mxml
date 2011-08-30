@@ -22,6 +22,10 @@
 		<![CDATA[
 			import flash.html.*;
 			
+			import mx.collections.ArrayCollection;
+			
+			import spark.events.IndexChangeEvent;
+			
 			public static const FMIS_APP:String = "rtmp://itp-flash.es.its.nyu.edu/sve204/mictest";
 			public static const WEB_URL:String = "http://itp.nyu.edu/";
 			
@@ -62,16 +66,27 @@
 						
 			public static const TIMER_INTERVAL:Number = 1000;
 			
+			private var availableCameras:Array;
+						
 			// Runs at launch
 			private function init():void
 			{
 				trace("init");
-				initHTMLViewer();
-				initNetConnection();
+				
+				availableCameras = Camera.names;
+				trace(availableCameras);
+				availableCamerasComboBox.dataProvider = new ArrayCollection(availableCameras);
+
+				initHTMLViewer();			
 			}
 			
 			private function initNetConnection():void 
 			{
+				if (netConnection != null) {
+					netConnection.close();
+					netConnection = null;
+				}
+				
 				netConnection = new NetConnection();
 				netConnection.client = new Object();
 				netConnection.client.onBWDone = onBWDone;
@@ -243,8 +258,8 @@
 				localNetStream.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler);
 				
 				// Get a local camera
-				camera = Camera.getCamera();
-				
+				camera = Camera.getCamera(availableCameras[availableCamerasComboBox.selectedIndex]);
+								
 				// Ask to be notified when user makes a choice regarding access
 				camera.addEventListener(StatusEvent.STATUS, cameraStatus);
 				
@@ -504,10 +519,14 @@
 		]]>
 	</fx:Script>
 
-	<mx:HTML id="htmlComponent"  horizontalCenter="0" verticalCenter="0" width="100%" height="100%"/>
+	<mx:HTML id="htmlComponent"  horizontalCenter="0" verticalCenter="20" width="100%" height="100%"/>
 	<mx:VideoDisplay id="remoteVideoDisplay" x="180" y="35" width="160" height="120" contentBackgroundAlpha="1.0" visible="false" />
 	<mx:VideoDisplay id="localVideoDisplay" x="10" y="36" width="160" height="120" contentBackgroundAlpha="1.0" visible="false" />
 	
 	<mx:TextArea x="693" y="35" width="263" height="500" id="textoutput" text="nothing yet" visible="false" />
+	<s:Button x="168" y="11" label="Connect" click="initNetConnection()"/>
+	<s:TextInput x="250" y="10" width="263"/>
+	<s:Button x="539" y="11" label="Go"/>
+	<s:ComboBox id="availableCamerasComboBox" x="10" y="10"/>
 
 </s:WindowedApplication>
