@@ -258,7 +258,8 @@
 				localNetStream.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler);
 				
 				// Get a local camera
-				camera = Camera.getCamera(availableCameras[availableCamerasComboBox.selectedIndex]);
+				debug("Selected Camera: " + availableCamerasComboBox.selectedIndex);
+				camera = Camera.getCamera(availableCamerasComboBox.selectedIndex as String);
 								
 				// Ask to be notified when user makes a choice regarding access
 				camera.addEventListener(StatusEvent.STATUS, cameraStatus);
@@ -524,9 +525,9 @@
 	<mx:VideoDisplay id="localVideoDisplay" x="10" y="36" width="160" height="120" contentBackgroundAlpha="1.0" visible="false" />
 	
 	<mx:TextArea x="693" y="35" width="263" height="500" id="textoutput" text="nothing yet" visible="false" />
-	<s:Button x="168" y="11" label="Connect" click="initNetConnection()"/>
-	<s:TextInput x="250" y="10" width="263"/>
-	<s:Button x="539" y="11" label="Go"/>
-	<s:ComboBox id="availableCamerasComboBox" x="10" y="10"/>
+	<s:Button x="168" y="11" label="Connect" click="initNetConnection()" />
+	<s:TextInput x="250" y="10" width="263" />
+	<s:Button x="539" y="11" label="Go" />
+	<s:ComboBox id="availableCamerasComboBox" x="10" y="10" />
 
 </s:WindowedApplication>
