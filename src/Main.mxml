@@ -20,6 +20,8 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import flash.filters.ColorMatrixFilter;
+			import flash.filters.ConvolutionFilter;
 			import flash.html.*;
 			
 			import mx.collections.ArrayCollection;
@@ -64,7 +66,7 @@
 			private var rpbmpd:BitmapData;
 			private var rframeTimer:Timer;
 						
-			public static const TIMER_INTERVAL:Number = 1000;
+			public static const TIMER_INTERVAL:Number = 100;
 			
 			private var availableCameras:Array;
 						
@@ -175,6 +177,8 @@
 							
 							rbmp.x = videoWidth + 10;
 							rbmp.y = 0;
+							rbmp.width = 160;
+							rbmp.height = 120;
 							stage.addChild(rbmp);
 							
 							// Create timer
@@ -328,6 +332,9 @@
 				// Add it to the stage
 				bmp.x = 0;
 				bmp.y = 0;
+				bmp.width = 160;
+				bmp.height = 120;
+
 				stage.addChild(bmp);
 				
 				// Create timer
@@ -378,8 +385,11 @@
 				// Save the frame to the bitmapdata object
 				bmpd.draw(video);
 				
+				var findEdges:ConvolutionFilter = new ConvolutionFilter(3, 3, [-1,0,1,-1,0,1,-1,0,1]);
+				bmpd.applyFilter(bmpd,bmpd.rect,new Point(0,0),findEdges);
+
 				if (pbmpd == null) {
-					pbmpd.draw(video);
+					pbmpd.draw(bmpd);
 				}
 				
 				// Combo with Edges
@@ -411,7 +421,8 @@
 					}
 				}
 				
-				pbmpd.draw(video);
+				pbmpd.draw(bmpd);
+				
 			}
 			
 			private function rgrabFrame(e:TimerEvent):void
@@ -423,8 +434,12 @@
 					
 					rbmpd.draw(remoteVideo);
 					
+					var findEdges:ConvolutionFilter = new ConvolutionFilter(3, 3, [-1,0,1,-1,0,1,-1,0,1]);
+					rbmpd.applyFilter(rbmpd,rbmpd.rect,new Point(0,0),findEdges);
+
+					
 					if (rpbmpd == null) {
-						rpbmpd.draw(remoteVideo);
+						rpbmpd.draw(rbmpd);
 					}
 					
 					for (var row:int=0; row<rbmpd.height; row++) { //for each row
@@ -454,22 +469,38 @@
 						}
 					}
 					
-					rpbmpd.draw(remoteVideo);
+					rpbmpd.draw(rbmpd);
+					
+					
 				//}
 
-			}					
+			}				
+			
+			private function userNewUrl():void {
+				var theNewUrl:String = userUrl.text;
+				
+				// Send to Browser
+				newUrl(theNewUrl);
+				
+				// Send to other users
+				sendNewUrl(theNewUrl);
+			}
 						
 			private function sendNewUrl(theNewUrl:String):void {
 				if (sharedObject != null) {
 					sharedObject.send("newUrl",theNewUrl);
 				}
+				
+				userUrl.text = theNewUrl;
 			}
 			
 			public function newUrl(theNewUrl:String):void {
 				debug("got new URL via shared object, sending to browser");
 
 				var urlRequest:URLRequest = new URLRequest(theNewUrl);				
-				htmlLoader.load(urlRequest);				
+				htmlLoader.load(urlRequest);			
+				
+				userUrl.text = theNewUrl;
 			}
 			
 			private function newLocation(htmlHostEvent:HTMLHostEvent):void 
@@ -526,8 +557,8 @@
 	
 	<mx:TextArea x="693" y="35" width="263" height="500" id="textoutput" text="nothing yet" visible="false" />
 	<s:Button x="168" y="11" label="Connect" click="initNetConnection()" />
-	<s:TextInput x="250" y="10" width="263" />
-	<s:Button x="539" y="11" label="Go" />
+	<s:TextInput x="250" y="10" width="263" id="userUrl" />
+	<s:Button x="539" y="11" label="Go" click="userNewUrl()" />
 	<s:ComboBox id="availableCamerasComboBox" x="10" y="10" />
 
 </s:WindowedApplication>
