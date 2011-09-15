@@ -20,6 +20,9 @@
 	
 	<fx:Script>
 		<![CDATA[
+			
+			/* Resizing and Scrolling  */
+						
 			import flash.filters.ColorMatrixFilter;
 			import flash.filters.ConvolutionFilter;
 			import flash.html.*;
@@ -69,7 +72,9 @@
 			public static const TIMER_INTERVAL:Number = 100;
 			
 			private var availableCameras:Array;
-						
+				
+			var dist:Number = 0;
+			
 			// Runs at launch
 			private function init():void
 			{
@@ -378,28 +383,29 @@
 				}
 			}
 			
-			private function grabFrame(e:TimerEvent):void
+			private function processFrame(currentBmpd:BitmapData, previousBmpd:BitmapData) 
 			{
-				//trace("timer");
 				
-				// Save the frame to the bitmapdata object
-				bmpd.draw(video);
-				
-				var findEdges:ConvolutionFilter = new ConvolutionFilter(3, 3, [-1,0,1,-1,0,1,-1,0,1]);
-				bmpd.applyFilter(bmpd,bmpd.rect,new Point(0,0),findEdges);
+				// Just find edges
+				//var findEdges:ConvolutionFilter = new ConvolutionFilter(3, 3, [-1,0,1,-1,0,1,-1,0,1]);
 
-				if (pbmpd == null) {
-					pbmpd.draw(bmpd);
+				// B&W find edges
+				/*
+				var findEdges:ConvolutionFilter = new ConvolutionFilter(3,3,new Array(0,dist,0,dist,-1 * 4 * dist,dist,0,dist,0),10);
+				currentBmpd.applyFilter(currentBmpd,bmpd.rect,new Point(0,0),findEdges);
+				*/
+				if (previousBmpd == null) {
+					previousBmpd.draw(currentBmpd);
 				}
 				
 				// Combo with Edges
 				// Cursor - Near other person - more resolution/color 
 				// Sound - Volume as well
-				for (var row:int=0; row<bmpd.height; row++) { //for each row
-					for(var col:int=0; col<bmpd.width; col++) { //for each column
+				for (var row:int=0; row<currentBmpd.height; row++) { //for each row
+					for(var col:int=0; col<currentBmpd.width; col++) { //for each column
 						//get the color of this pixels
-						var pix:uint = bmpd.getPixel(col,row);
-						var ppix:uint = pbmpd.getPixel(col,row);
+						var pix:uint = currentBmpd.getPixel(col,row);
+						var ppix:uint = previousBmpd.getPixel(col,row);
 						
 						var red:int = pix >> 16;
 						var pred:int = ppix >> 16;
@@ -410,70 +416,30 @@
 						var blue:int = pix & 0xff;
 						var pblue:int = ppix & 0xff;
 						
-						if (Math.abs(red - pred) + Math.abs(green - pgreen) + Math.abs(blue - pblue) > 50)
+						if (Math.abs(red - pred) + Math.abs(green - pgreen) + Math.abs(blue - pblue) > dist)
 						{
-							bmpd.setPixel(col,row,pix);
+							currentBmpd.setPixel(col,row,pix);
 						}
 						else 
 						{
-							bmpd.setPixel32(col,row,0x00FFFFFF);
+							currentBmpd.setPixel32(col,row,0x00FFFFFF);
 						}
 					}
 				}
 				
-				pbmpd.draw(bmpd);
-				
+				//previousBmpd.draw(currentBmpd);
+			}
+			
+			private function grabFrame(e:TimerEvent):void
+			{
+				bmpd.draw(video);
+				processFrame(bmpd, pbmpd);
 			}
 			
 			private function rgrabFrame(e:TimerEvent):void
 			{
-				//trace("timer");
-				
-				// Save the frame to the bitmapdata object
-				//if (remoteVideo != null) {
-					
-					rbmpd.draw(remoteVideo);
-					
-					var findEdges:ConvolutionFilter = new ConvolutionFilter(3, 3, [-1,0,1,-1,0,1,-1,0,1]);
-					rbmpd.applyFilter(rbmpd,rbmpd.rect,new Point(0,0),findEdges);
-
-					
-					if (rpbmpd == null) {
-						rpbmpd.draw(rbmpd);
-					}
-					
-					for (var row:int=0; row<rbmpd.height; row++) { //for each row
-						for(var col:int=0; col<rbmpd.width; col++) { //for each column
-							//get the color of this pixels
-							var pix:uint = rbmpd.getPixel(col,row);
-							var ppix:uint = rpbmpd.getPixel32(col,row);
-							
-							var red:int = pix >> 16;
-							var pred:int = ppix >> 16;
-							
-							var green:int = pix >> 8 & 0xff;
-							var pgreen:int = ppix >> 8 & 0xff;
-							
-							var blue:int = pix & 0xff;
-							var pblue:int = ppix & 0xff;
-							
-							if (Math.abs(red - pred) + Math.abs(green - pgreen) + Math.abs(blue - pblue) > 50)
-							{
-								rbmpd.setPixel(col,row,pix);
-							}
-							else 
-							{
-								rbmpd.setPixel32(col,row,0x00FFFFFF);
-							}
-							
-						}
-					}
-					
-					rpbmpd.draw(rbmpd);
-					
-					
-				//}
-
+				rbmpd.draw(remoteVideo);
+				processFrame(rbmpd, rpbmpd);
 			}				
 			
 			private function userNewUrl():void {
@@ -535,8 +501,8 @@
 			}
 			
 			private function adjustVolumes():void {
-				var dist:Number = Math.sqrt(Math.pow(bmp.x - rbmp.x, 2) + Math.pow(bmp.y - rbmp.y, 2));
-				var distFraction:Number = dist/Math.sqrt(Math.pow(stage.width, 2) + Math.pow(stage.height, 2));
+				dist = Math.sqrt(Math.pow(bmp.x - rbmp.x, 2) + Math.pow(bmp.y - rbmp.y, 2));
+				var distFraction:Number = 1-dist/Math.sqrt(Math.pow(stage.width, 2) + Math.pow(stage.height, 2));
 				
 				if (remoteNetStream != null) {
 					var remoteVolumeTransform:SoundTransform = new SoundTransform();
@@ -551,9 +517,9 @@
 		]]>
 	</fx:Script>
 
-	<mx:HTML id="htmlComponent"  horizontalCenter="0" verticalCenter="20" width="100%" height="100%"/>
-	<mx:VideoDisplay id="remoteVideoDisplay" x="180" y="35" width="160" height="120" contentBackgroundAlpha="1.0" visible="false" />
-	<mx:VideoDisplay id="localVideoDisplay" x="10" y="36" width="160" height="120" contentBackgroundAlpha="1.0" visible="false" />
+	<mx:HTML id="htmlComponent"  horizontalCenter="0" verticalCenter="20" width="100%" height="100%" />
+	<mx:VideoDisplay id="remoteVideoDisplay" x="180" y="35" width="160" height="120" contentBackgroundAlpha="0.5" visible="false" />
+	<mx:VideoDisplay id="localVideoDisplay" x="10" y="36" width="160" height="120" contentBackgroundAlpha="0.5" visible="false" />
 	
 	<mx:TextArea x="693" y="35" width="263" height="500" id="textoutput" text="nothing yet" visible="false" />
 	<s:Button x="168" y="11" label="Connect" click="initNetConnection()" />
