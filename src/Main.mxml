@@ -8,7 +8,7 @@
 		@namespace s "library://ns.adobe.com/flex/spark"; 
 		s|WindowedApplication 
 		{ 
-			skinClass:ClassReference("spark.skins.spark.SparkChromeWindowedApplicationSkin"); 
+			 
 			background-color:#999999; 
 			background-alpha:"0.7"; 
 		}          
@@ -20,7 +20,7 @@
 	
 	<fx:Script>
 		<![CDATA[
-			
+			//skinClass:ClassReference("spark.skins.spark.SparkChromeWindowedApplicationSkin");
 			/* Resizing and Scrolling  */
 						
 			import flash.filters.ColorMatrixFilter;
@@ -57,6 +57,8 @@
 			// Responder (for communicating messages with FMS) specifically, which stream am I?
 			private var selectStreamResponder:Responder;
 			
+			private var uniqueId:String = null;
+			
 			private var sharedObject:SharedObject;
 						
 			private var bmp:Bitmap;
@@ -83,6 +85,9 @@
 				availableCameras = Camera.names;
 				trace(availableCameras);
 				availableCamerasComboBox.dataProvider = new ArrayCollection(availableCameras);
+				if (availableCamerasComboBox.dataProvider.length >= 1) {
+					availableCamerasComboBox.selectedIndex = 0;					
+				}
 
 				initHTMLViewer();			
 			}
@@ -214,7 +219,7 @@
 				}
 			}			
 
-			public function mousePostionChanged(streamName:String, x:Number, y:Number):void {
+			public function mousePostionChanged(streamName:String, x:Number, y:Number, xScrollPos:Number, yScrollPos:Number, containerWidth:Number, containerHeight:Number):void {
 				//debug(streamName + ":" + x + "," + y);
 				
 				if (streamName == remoteStreamName) {
@@ -223,11 +228,20 @@
 				}
 				
 				adjustVolumes();
+				
+				htmlComponent.verticalScrollPosition = yScrollPos;
+				htmlComponent.horizontalScrollPosition = xScrollPos;
+				
+				if (containerWidth <= maxWidth && containerHeight <= maxHeight) {
+					width = containerWidth;
+					height = containerHeight;
+				}
 			}
-			
-			private function sendMousePosition(streamName:String, x:Number, y:Number):void {
+
+			private function sendMousePosition(streamName:String, x:Number, y:Number, xScrollPos:Number, yScrollPos:Number, containerWidth:Number, containerHeight:Number):void {
 				if (sharedObject != null) {
-					sharedObject.send("mousePostionChanged",streamName,x,y);
+					debug("Sending: " + streamName + ", " + x + ", " + y + ", " + xScrollPos + ", " + yScrollPos + ", " + containerWidth + ", " + containerHeight); 
+					sharedObject.send("mousePostionChanged",streamName,x,y,xScrollPos,yScrollPos,containerWidth,containerHeight);
 				}
 			}
 			
@@ -484,7 +498,10 @@
 			private function mouseMoved(e:MouseEvent):void 
 			{
 				//trace("mouse moved: " + e.localX + " " + e.localY);
-				sendMousePosition(localStreamName, e.localX, e.localY);
+				sendMousePosition(localStreamName, e.localX, e.localY, 
+					htmlComponent.horizontalScrollPosition, htmlComponent.verticalScrollPosition,
+					width, height
+				);
 				
 				if (bmp != null) {
 					bmp.x = e.localX;
