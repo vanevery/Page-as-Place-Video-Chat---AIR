@@ -8,7 +8,6 @@
 		@namespace s "library://ns.adobe.com/flex/spark"; 
 		s|WindowedApplication 
 		{ 
-			 
 			background-color:#999999; 
 			background-alpha:"0.7"; 
 		}          
@@ -21,6 +20,7 @@
 	<fx:Script>
 		<![CDATA[
 			//skinClass:ClassReference("spark.skins.spark.SparkChromeWindowedApplicationSkin");
+			
 			/* Resizing and Scrolling  */
 						
 			import flash.filters.ColorMatrixFilter;
@@ -31,7 +31,7 @@
 			
 			import spark.events.IndexChangeEvent;
 			
-			public static const FMIS_APP:String = "rtmp://itp-flash.es.its.nyu.edu/sve204/mictest";
+			public static const FMIS_APP:String = "rtmp://localhost/pageasplace";
 			public static const WEB_URL:String = "http://itp.nyu.edu/";
 			
 			private var htmlLoader:HTMLLoader;
@@ -156,7 +156,8 @@
 						
 						// Set up the shared object for sending recieving mouse positions
 						// We'll call it SimpleSO, pass in the app url and not make it persistent
-						sharedObject = SharedObject.getRemote("SimpleSO",netConnection.uri,false);
+						//sharedObject = SharedObject.getRemote("SimpleSO",netConnection.uri,false);
+						sharedObject = SharedObject.getRemote("SimpleSO",netConnection.uri);
 						
 						// Add a listener for when shared object is changed
 						//sharedObject.addEventListener(SyncEvent.SYNC,syncEventCallBack); 
@@ -219,30 +220,65 @@
 				}
 			}			
 
-			public function mousePostionChanged(streamName:String, x:Number, y:Number, xScrollPos:Number, yScrollPos:Number, containerWidth:Number, containerHeight:Number):void {
-				//debug(streamName + ":" + x + "," + y);
+			public function mousePostionChanged(streamName:String, x:String, y:String, xScrollPos:String, yScrollPos:String, containerWidth:String, containerHeight:String):void {
+				debug(streamName + ":" + x + "," + y);
+				
+				var numx:Number = Number(x);
+				var numy:Number = Number(y);
+				var numxScrollPos:Number = Number(xScrollPos);
+				var numyScrollPos:Number = Number(yScrollPos);
+				var numcontainerWidth:Number = Number(containerWidth);
+				var numcontainerHeight:Number = Number(containerHeight);
 				
 				if (streamName == remoteStreamName) {
-					rbmp.x = x;
-					rbmp.y = y;					
+					rbmp.x = numx;
+					rbmp.y = numy;					
 				}
 				
 				adjustVolumes();
 				
-				htmlComponent.verticalScrollPosition = yScrollPos;
-				htmlComponent.horizontalScrollPosition = xScrollPos;
+				htmlComponent.verticalScrollPosition = numyScrollPos;
+				htmlComponent.horizontalScrollPosition = numxScrollPos;
 				
-				if (containerWidth <= maxWidth && containerHeight <= maxHeight) {
-					width = containerWidth;
-					height = containerHeight;
+				if (numcontainerWidth <= maxWidth && numcontainerHeight <= maxHeight) {
+					width = numcontainerWidth;
+					height = numcontainerHeight;
 				}
 			}
 
 			private function sendMousePosition(streamName:String, x:Number, y:Number, xScrollPos:Number, yScrollPos:Number, containerWidth:Number, containerHeight:Number):void {
 				if (sharedObject != null) {
 					debug("Sending: " + streamName + ", " + x + ", " + y + ", " + xScrollPos + ", " + yScrollPos + ", " + containerWidth + ", " + containerHeight); 
-					sharedObject.send("mousePostionChanged",streamName,x,y,xScrollPos,yScrollPos,containerWidth,containerHeight);
+					sharedObject.send("mousePostionChanged",streamName,String(x),String(y),String(xScrollPos),String(yScrollPos),String(containerWidth),String(containerHeight));
+					//sharedObject.send("testIt",streamName,x,y,xScrollPos,yScrollPos,containerWidth,containerHeight);
 				}
+			}
+			
+			public function testIt(streamName:String,x:String,y:String,xScrollPos:String,yScrollPos:String,containerWidth:String,containerHeight:String) {
+				debug("got testIt " + streamName + "," + x + "," + xScrollPos + "," + yScrollPos);
+				
+				var numx:Number = Number(x);
+				var numy:Number = Number(y);
+				var numxScrollPos:Number = Number(xScrollPos);
+				var numyScrollPos:Number = Number(yScrollPos);
+				var numcontainerWidth:Number = Number(containerWidth);
+				var numcontainerHeight:Number = Number(containerHeight);
+
+				
+				if (streamName == remoteStreamName) {
+					rbmp.x = numx;
+					rbmp.y = numy;					
+				}
+				
+				adjustVolumes();
+				
+				htmlComponent.verticalScrollPosition = numyScrollPos;
+				htmlComponent.horizontalScrollPosition = numxScrollPos;
+				
+				if (numcontainerWidth <= maxWidth && numcontainerHeight <= maxHeight) {
+					width = numcontainerWidth;
+					height = numcontainerHeight;
+				}			
 			}
 			
 			private function selectStreamResponse(streamNames:String):void
@@ -518,17 +554,19 @@
 			}
 			
 			private function adjustVolumes():void {
-				dist = Math.sqrt(Math.pow(bmp.x - rbmp.x, 2) + Math.pow(bmp.y - rbmp.y, 2));
-				var distFraction:Number = 1-dist/Math.sqrt(Math.pow(stage.width, 2) + Math.pow(stage.height, 2));
+				if (rbmp != null) {
+					dist = Math.sqrt(Math.pow(bmp.x - rbmp.x, 2) + Math.pow(bmp.y - rbmp.y, 2));
 				
-				if (remoteNetStream != null) {
-					var remoteVolumeTransform:SoundTransform = new SoundTransform();
-					remoteVolumeTransform.volume = distFraction;
-					remoteNetStream.soundTransform = remoteVolumeTransform;
+					var distFraction:Number = 1-dist/Math.sqrt(Math.pow(stage.width, 2) + Math.pow(stage.height, 2));
 					
-					//debug("Set Sound to " + remoteVolumeTransform.volume);
-				}
-				
+					if (remoteNetStream != null) {
+						var remoteVolumeTransform:SoundTransform = new SoundTransform();
+						remoteVolumeTransform.volume = distFraction;
+						remoteNetStream.soundTransform = remoteVolumeTransform;
+						
+						//debug("Set Sound to " + remoteVolumeTransform.volume);
+					}
+				}				
 			}
 			
 		]]>
