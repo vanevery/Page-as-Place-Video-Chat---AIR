@@ -18,20 +18,19 @@
 	</fx:Declarations>
 	
 	<fx:Script>
-		<![CDATA[
-			//skinClass:ClassReference("spark.skins.spark.SparkChromeWindowedApplicationSkin");
-			
-			/* Resizing and Scrolling  */
-						
+		<![CDATA[			
 			import flash.filters.ColorMatrixFilter;
 			import flash.filters.ConvolutionFilter;
 			import flash.html.*;
 			
 			import mx.collections.ArrayCollection;
+			import mx.controls.List;
 			
 			import spark.events.IndexChangeEvent;
 			
+			//public static const FMIS_APP:String = "rtmp://ec2-50-19-73-43.compute-1.amazonaws.com/pageasplace";
 			public static const FMIS_APP:String = "rtmp://localhost/pageasplace";
+
 			public static const WEB_URL:String = "http://itp.nyu.edu/";
 			
 			private var htmlLoader:HTMLLoader;
@@ -56,6 +55,7 @@
 						
 			// Responder (for communicating messages with FMS) specifically, which stream am I?
 			private var selectStreamResponder:Responder;
+			private var urlListResponder:Responder;
 			
 			private var uniqueId:String = null;
 			
@@ -153,6 +153,10 @@
 						
 						selectStreamResponder = new Responder(selectStreamResponse);
 						netConnection.call("streamSelect",selectStreamResponder);
+						
+						debug("Asking for URLs");
+						urlListResponder = new Responder(urlListResponse);
+						netConnection.call("getUrls",urlListResponder);
 						
 						// Set up the shared object for sending recieving mouse positions
 						// We'll call it SimpleSO, pass in the app url and not make it persistent
@@ -304,6 +308,14 @@
 						startRemoteStream();
 					}
 				}
+			}
+					
+			private function urlListResponse(urlList:String):void 
+			{
+				debug("Got URL list");
+				
+				var theUrlList = urlList.split("\n");
+				activeUrlsComboBox.dataProvider = new ArrayCollection(theUrlList);
 			}
 						
 			private function startLocalStream():void
@@ -490,7 +502,15 @@
 			{
 				rbmpd.draw(remoteVideo);
 				processFrame(rbmpd, rpbmpd);
-			}				
+			}	
+			
+			private function userExistingUrl():void 
+			{
+				// Get an existing URL 
+				debug("Existing URL: " + activeUrlsComboBox.selectedIndex as String);
+				userUrl.text = activeUrlsComboBox.selectedIndex as String;
+				userNewUrl();
+			}
 			
 			private function userNewUrl():void {
 				var theNewUrl:String = userUrl.text;
@@ -569,17 +589,26 @@
 				}				
 			}
 			
+
+			protected function activeUrlschangeHandler(event:IndexChangeEvent):void
+			{
+				var newUrl:String = ComboBox(event.target).selectedItem.data; 
+				trace("New Combobox URL: " + newUrl);
+			}
+
 		]]>
 	</fx:Script>
 
-	<mx:HTML id="htmlComponent"  horizontalCenter="0" verticalCenter="20" width="100%" height="100%" />
+	<mx:HTML id="htmlComponent"  horizontalCenter="0" verticalCenter="35" width="100%" height="316" />
 	<mx:VideoDisplay id="remoteVideoDisplay" x="180" y="35" width="160" height="120" contentBackgroundAlpha="0.5" visible="false" />
 	<mx:VideoDisplay id="localVideoDisplay" x="10" y="36" width="160" height="120" contentBackgroundAlpha="0.5" visible="false" />
 	
 	<mx:TextArea x="693" y="35" width="263" height="500" id="textoutput" text="nothing yet" visible="false" />
 	<s:Button x="168" y="11" label="Connect" click="initNetConnection()" />
 	<s:TextInput x="250" y="10" width="263" id="userUrl" />
-	<s:Button x="539" y="11" label="Go" click="userNewUrl()" />
+	<s:Button x="522" y="10" label="Go" click="userNewUrl()" />
 	<s:ComboBox id="availableCamerasComboBox" x="10" y="10" />
+	<s:ComboBox id="activeUrlsComboBox" x="250" y="40"  width="263" change="activeUrlschangeHandler(event)"/>
+	<s:Button x="523" y="42" label="Go" click="userExistingUrl()" />
 
 </s:WindowedApplication>
