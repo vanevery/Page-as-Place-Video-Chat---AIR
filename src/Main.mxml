@@ -101,12 +101,12 @@
 				}
 				
 				netConnection = new NetConnection();
-				netConnection.client = new Object();
-				netConnection.client.onBWDone = onBWDone;
-				netConnection.client.onMetaData = onMetaData;
+				netConnection.client = this
+				//netConnection.client.onBWDone = onBWDone;
+				//netConnection.client.onMetaData = onMetaData;
 				netConnection.addEventListener(NetStatusEvent.NET_STATUS, netStatusHandler);
 				
-				netConnection.connect(FMIS_APP);				
+				netConnection.connect(FMIS_APP,WEB_URL);				
 			}
 			
 			private function initHTMLViewer():void 
@@ -512,7 +512,7 @@
 			private function userNewUrl(theNewUrl:String):void {
 				
 				// Send to Browser
-				newUrl(theNewUrl);
+				//newUrl(theNewUrl);
 				
 				// Send to other users
 				sendNewUrl(theNewUrl);
@@ -525,15 +525,16 @@
 				}
 				*/
 				var newUrlResponder:Responder = new Responder(newUrlResponse);
-				netConnection.call("newUrl",newUrlResponder);
+				netConnection.call("newUrl",newUrlResponder,theNewUrl);
 			}
 			
 			public function newUrlResponse() {
-				
+				//Nothing
 			}
-			
+						
 			public function newUrl(theNewUrl:String):void {
 				debug("got new URL via shared object, sending to browser");
+				debug("or from wowza");
 
 				var urlRequest:URLRequest = new URLRequest(theNewUrl);				
 				htmlLoader.load(urlRequest);			
