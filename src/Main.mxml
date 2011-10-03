@@ -89,6 +89,7 @@
 					availableCamerasComboBox.selectedIndex = 0;					
 				}
 
+				initNetConnection();
 				initHTMLViewer();			
 			}
 			
@@ -149,10 +150,6 @@
 					case "NetConnection.Connect.Success":
 						
 						debug("Connected");
-						debug("Asking for stream name");
-						
-						selectStreamResponder = new Responder(selectStreamResponse);
-						netConnection.call("streamSelect",selectStreamResponder);
 						
 						debug("Asking for URLs");
 						urlListResponder = new Responder(urlListResponse);
@@ -507,13 +504,12 @@
 			private function userExistingUrl():void 
 			{
 				// Get an existing URL 
-				debug("Existing URL: " + activeUrlsComboBox.selectedIndex as String);
-				userUrl.text = activeUrlsComboBox.selectedIndex as String;
-				userNewUrl();
+				debug("Existing URL: " + activeUrlsComboBox.selectedItem as String);
+				//userUrl.text = activeUrlsComboBox.selectedItem as String;
+				userNewUrl(activeUrlsComboBox.selectedItem as String);
 			}
 			
-			private function userNewUrl():void {
-				var theNewUrl:String = userUrl.text;
+			private function userNewUrl(theNewUrl:String):void {
 				
 				// Send to Browser
 				newUrl(theNewUrl);
@@ -523,11 +519,17 @@
 			}
 						
 			private function sendNewUrl(theNewUrl:String):void {
+				/*
 				if (sharedObject != null) {
 					sharedObject.send("newUrl",theNewUrl);
 				}
+				*/
+				var newUrlResponder:Responder = new Responder(newUrlResponse);
+				netConnection.call("newUrl",newUrlResponder);
+			}
+			
+			public function newUrlResponse() {
 				
-				userUrl.text = theNewUrl;
 			}
 			
 			public function newUrl(theNewUrl:String):void {
@@ -536,7 +538,7 @@
 				var urlRequest:URLRequest = new URLRequest(theNewUrl);				
 				htmlLoader.load(urlRequest);			
 				
-				userUrl.text = theNewUrl;
+				activeUrlsComboBox.textInput.text = theNewUrl;
 			}
 			
 			private function newLocation(htmlHostEvent:HTMLHostEvent):void 
@@ -592,23 +594,29 @@
 
 			protected function activeUrlschangeHandler(event:IndexChangeEvent):void
 			{
-				var newUrl:String = ComboBox(event.target).selectedItem.data; 
+				var newUrl:String = ComboBox(event.target).selectedItem; 
 				trace("New Combobox URL: " + newUrl);
 			}
+			
+			private function connectCamera() {
+				debug("Asking for stream name");
+			
+				selectStreamResponder = new Responder(selectStreamResponse);
+				netConnection.call("streamSelect",selectStreamResponder);
+			}
+
 
 		]]>
 	</fx:Script>
 
-	<mx:HTML id="htmlComponent"  horizontalCenter="0" verticalCenter="35" width="100%" height="316" />
+	<mx:HTML id="htmlComponent"  horizontalCenter="0" verticalCenter="20" width="100%" height="347" />
 	<mx:VideoDisplay id="remoteVideoDisplay" x="180" y="35" width="160" height="120" contentBackgroundAlpha="0.5" visible="false" />
 	<mx:VideoDisplay id="localVideoDisplay" x="10" y="36" width="160" height="120" contentBackgroundAlpha="0.5" visible="false" />
 	
 	<mx:TextArea x="693" y="35" width="263" height="500" id="textoutput" text="nothing yet" visible="false" />
-	<s:Button x="168" y="11" label="Connect" click="initNetConnection()" />
-	<s:TextInput x="250" y="10" width="263" id="userUrl" />
-	<s:Button x="522" y="10" label="Go" click="userNewUrl()" />
+	<s:Button x="168" y="11" label="Connect" click="connectCamera()" />
 	<s:ComboBox id="availableCamerasComboBox" x="10" y="10" />
-	<s:ComboBox id="activeUrlsComboBox" x="250" y="40"  width="263" change="activeUrlschangeHandler(event)"/>
-	<s:Button x="523" y="42" label="Go" click="userExistingUrl()" />
+	<s:ComboBox id="activeUrlsComboBox" x="250" y="10"  width="263" />
+	<s:Button x="523" y="11" label="Go" click="userExistingUrl()" />
 
 </s:WindowedApplication>
