@@ -28,8 +28,8 @@
 			
 			import spark.events.IndexChangeEvent;
 			
-			//public static const FMIS_APP:String = "rtmp://ec2-50-19-73-43.compute-1.amazonaws.com/pageasplace";
-			public static const FMIS_APP:String = "rtmp://localhost/pageasplace";
+			public static const FMIS_APP:String = "rtmp://ec2-50-19-73-43.compute-1.amazonaws.com/pageasplace";
+			//public static const FMIS_APP:String = "rtmp://localhost/pageasplace";
 
 			public static const WEB_URL:String = "http://itp.nyu.edu/";
 			
@@ -501,6 +501,7 @@
 				processFrame(rbmpd, rpbmpd);
 			}	
 			
+			// The user selects a URL from the drop down list
 			private function userExistingUrl():void 
 			{
 				// Get an existing URL 
@@ -509,15 +510,17 @@
 				userNewUrl(activeUrlsComboBox.selectedItem as String);
 			}
 			
+			// The user selected or typed in a new url
 			private function userNewUrl(theNewUrl:String):void {
 				
 				// Send to Browser
-				//newUrl(theNewUrl);
+				newUrl(theNewUrl);
 				
 				// Send to other users
 				sendNewUrl(theNewUrl);
 			}
-						
+			
+			// Send the URL to everyone who needs it
 			private function sendNewUrl(theNewUrl:String):void {
 				/*
 				if (sharedObject != null) {
@@ -531,16 +534,37 @@
 			public function newUrlResponse() {
 				//Nothing
 			}
-						
-			public function newUrl(theNewUrl:String):void {
+			
+			/*
+			// The newUrl from the server if we have HTML with it
+			public function newUrl(theNewUrl:String, theNewHTML:String):void {
 				debug("got new URL via shared object, sending to browser");
 				debug("or from wowza");
 
-				var urlRequest:URLRequest = new URLRequest(theNewUrl);				
-				htmlLoader.load(urlRequest);			
+				//var urlRequest:URLRequest = new URLRequest(theNewUrl);				
+				//htmlLoader.load(urlRequest);
+				
+				htmlComponent.htmlText = theNewHTML;
+				//htmlComponent.htmlHost.updateLocation(theNewUrl);
 				
 				activeUrlsComboBox.textInput.text = theNewUrl;
 			}
+			*/
+			
+			// The newUrl from the server if we don't have HTML with it
+			public function newUrl(theNewUrl:String):void {
+				debug("got new URL via shared object, sending to browser");
+				debug("or from wowza");
+				
+				var urlRequest:URLRequest = new URLRequest(theNewUrl);				
+				htmlLoader.load(urlRequest);
+				
+				//htmlComponent.htmlText = theNewHTML;
+				//htmlComponent.htmlHost.updateLocation(theNewUrl);
+				
+				activeUrlsComboBox.textInput.text = theNewUrl;
+			}
+
 			
 			private function newLocation(htmlHostEvent:HTMLHostEvent):void 
 			{
@@ -610,7 +634,7 @@
 		]]>
 	</fx:Script>
 
-	<mx:HTML id="htmlComponent"  horizontalCenter="0" verticalCenter="20" width="100%" height="347" />
+	<mx:HTML id="htmlComponent"  horizontalCenter="0" verticalCenter="20" width="100%" height="100%" />
 	<mx:VideoDisplay id="remoteVideoDisplay" x="180" y="35" width="160" height="120" contentBackgroundAlpha="0.5" visible="false" />
 	<mx:VideoDisplay id="localVideoDisplay" x="10" y="36" width="160" height="120" contentBackgroundAlpha="0.5" visible="false" />
 	
